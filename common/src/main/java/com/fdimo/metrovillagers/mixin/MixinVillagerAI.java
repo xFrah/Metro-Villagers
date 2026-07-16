@@ -9,6 +9,7 @@ import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -19,6 +20,9 @@ import java.util.Set;
 
 @Mixin(Villager.class)
 public abstract class MixinVillagerAI {
+
+    @Unique
+    private GlobalPos lastAttemptedJobSite = null;
 
     @Inject(method = "customServerAiStep", at = @At("HEAD"))
     private void onCustomServerAiStep(CallbackInfo ci) {
@@ -31,10 +35,23 @@ public abstract class MixinVillagerAI {
         // Passive Observation: Run every ~10 seconds (200 ticks)
         if (self.tickCount % 200 == 0) {
             PoiManager poiManager = serverLevel.getPoiManager();
+
+            // Validate memory (remove destroyed job sites)
+            Set<GlobalPos> toRemove = new java.util.HashSet<>();
+            for (GlobalPos pos : knowledge.getKnownJobSites()) {
+                if (pos.dimension() == serverLevel.dimension()) {
+                    if (!poiManager.exists(pos.pos(), poiTypeHolder -> poiTypeHolder.is(net.minecraft.tags.PoiTypeTags.ACQUIRABLE_JOB_SITE))) {
+                        toRemove.add(pos);
+                        com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [Memory Validation] Removed destroyed job site at " + pos.pos().toShortString());
+                    }
+                }
+            }
+            knowledge.getKnownJobSites().removeAll(toRemove);
+
             poiManager.getInRange(
                 poiTypeHolder -> poiTypeHolder.is(net.minecraft.tags.PoiTypeTags.ACQUIRABLE_JOB_SITE),
                 self.blockPosition(),
-                128, // 128 block radius scan
+                48, // 48 block radius scan (Vanilla range)
                 PoiManager.Occupancy.HAS_SPACE
             ).forEach(poiRecord -> {
                 GlobalPos pos = GlobalPos.of(serverLevel.dimension(), poiRecord.getPos());
@@ -48,6 +65,10 @@ public abstract class MixinVillagerAI {
                 Brain<Villager> brain = self.getBrain();
                 if (brain.getMemory(MemoryModuleType.POTENTIAL_JOB_SITE).isEmpty()) {
                     
+                    if (this.lastAttemptedJobSite != null) {
+                        knowledge.markUnreachable(this.lastAttemptedJobSite, serverLevel.getGameTime());
+                        this.lastAttemptedJobSite = null;
+                    }
                     // Look for nearby villagers to ask
                     List<Villager> nearbyVillagers = serverLevel.getEntitiesOfClass(
                         Villager.class, self.getBoundingBox().inflate(5.0)
@@ -61,7 +82,8 @@ public abstract class MixinVillagerAI {
                         Set<GlobalPos> nearbySites = nearbyKnowledge.getKnownJobSites();
 
                         if (!nearbySites.isEmpty()) {
-                            com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] Jobless Villager queried nearby villager and received " + nearbySites.size() + " known sites!");
+                            String prof = self.getVillagerData().getProfession().name();
+                            com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [" + prof + " at " + self.blockPosition().toShortString() + "] Jobless Villager queried nearby villager and received " + nearbySites.size() + " known sites!");
                             foundGossip = true;
                         }
                         // Add their knowledge to our knowledge (this will respect the max 10 constraint and closest logic)
@@ -77,9 +99,17 @@ public abstract class MixinVillagerAI {
 
                         if (closestSite != null) {
                             if (foundGossip) {
-                                com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] Jobless Villager selected closest gossiped job site at " + closestSite.pos().toShortString() + " as their new target!");
+                                String prof = self.getVillagerData().getProfession().name();
+                                String blockName = "unknown";
+                                if (self.level().dimension() == closestSite.dimension()) {
+                                    blockName = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(serverLevel.getBlockState(closestSite.pos()).getBlock()).toString();
+                                }
+                                com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [" + prof + " at " + self.blockPosition().toShortString() + "] Jobless Villager selected closest gossiped job site (" + blockName + ") at " + closestSite.pos().toShortString() + " as their new target!");
+                                
+                                serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.ANGRY_VILLAGER, self.getX(), self.getY() + self.getEyeHeight(), self.getZ(), 3, 0.5, 0.5, 0.5, 0.0);
                             }
                             brain.setMemory(MemoryModuleType.POTENTIAL_JOB_SITE, closestSite);
+                            this.lastAttemptedJobSite = closestSite;
                         }
                     }
                 }
