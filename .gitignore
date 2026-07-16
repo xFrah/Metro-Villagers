@@ -25,3 +25,5 @@ runs
 .env
 
 .vscode
+net/
+temp_src/

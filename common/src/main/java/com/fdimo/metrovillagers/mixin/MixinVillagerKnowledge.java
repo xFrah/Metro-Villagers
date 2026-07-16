@@ -23,7 +23,7 @@ public class MixinVillagerKnowledge implements IVillagerKnowledge {
     private final Map<GlobalPos, Long> unreachableJobSites = new HashMap<>();
 
     @Unique
-    private static final int MAX_KNOWN_SITES = 10;
+    private static final int MAX_KNOWN_SITES = 50;
 
     @Override
     public Set<GlobalPos> getKnownJobSites() {
@@ -37,7 +37,7 @@ public class MixinVillagerKnowledge implements IVillagerKnowledge {
         Villager self = (Villager) (Object) this;
         long currentTime = self.level().getGameTime();
         if (unreachableJobSites.containsKey(pos)) {
-            if (currentTime - unreachableJobSites.get(pos) < 1200) { // 60 seconds (20 ticks * 60)
+            if (currentTime - unreachableJobSites.get(pos) < 100) { // 5 seconds (20 ticks * 5)
                 return;
             } else {
                 unreachableJobSites.remove(pos);
@@ -107,6 +107,6 @@ public class MixinVillagerKnowledge implements IVillagerKnowledge {
             blockName = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
         }
 
-        com.fdimo.metrovillagers.Constants.LOG.info(prefix + "Pathfinder failed! Blacklisting (" + blockName + ") at " + pos.pos().toShortString() + " for 60 seconds.");
+        com.fdimo.metrovillagers.Constants.LOG.info(prefix + "Pathfinder failed! Blacklisting (" + blockName + ") at " + pos.pos().toShortString() + " for 5 seconds.");
     }
 }

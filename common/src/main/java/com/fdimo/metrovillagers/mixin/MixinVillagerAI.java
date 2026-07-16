@@ -51,7 +51,7 @@ public abstract class MixinVillagerAI {
             poiManager.getInRange(
                 poiTypeHolder -> poiTypeHolder.is(net.minecraft.tags.PoiTypeTags.ACQUIRABLE_JOB_SITE),
                 self.blockPosition(),
-                48, // 48 block radius scan (Vanilla range)
+                32, // 32 block radius scan
                 PoiManager.Occupancy.HAS_SPACE
             ).forEach(poiRecord -> {
                 GlobalPos pos = GlobalPos.of(serverLevel.dimension(), poiRecord.getPos());
