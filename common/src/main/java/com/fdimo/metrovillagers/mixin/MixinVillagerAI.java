@@ -24,7 +24,7 @@ public abstract class MixinVillagerAI {
     @Unique
     private static final java.util.Map<net.minecraft.core.BlockPos, Long> OCCUPANCY_CACHE_TIME = new java.util.concurrent.ConcurrentHashMap<>();
     @Unique
-    private static final java.util.Map<net.minecraft.core.BlockPos, Boolean> OCCUPANCY_CACHE_STATUS = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.util.Map<net.minecraft.core.BlockPos, Integer> OCCUPANCY_CACHE_OWNER = new java.util.concurrent.ConcurrentHashMap<>();
 
     @Unique
     private boolean metro_isOccupied(ServerLevel serverLevel, net.minecraft.core.BlockPos pos) {
@@ -33,28 +33,29 @@ public abstract class MixinVillagerAI {
         
         // Cache occupancy status based on config duration to prevent spamming spatial queries
         if (lastCheck != null && currentTime - lastCheck < (com.fdimo.metrovillagers.Config.DATA.occupancyCacheDurationSeconds * 20L)) {
-            return OCCUPANCY_CACHE_STATUS.getOrDefault(pos, false);
+            return OCCUPANCY_CACHE_OWNER.getOrDefault(pos, -1) != -1;
         }
 
         net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(pos).inflate(64.0D);
-        boolean occupied = false;
+        int occupiedBy = -1;
         for (Villager v : serverLevel.getEntitiesOfClass(Villager.class, box)) {
             java.util.Optional<GlobalPos> jobSite = v.getBrain().getMemory(MemoryModuleType.JOB_SITE);
             java.util.Optional<GlobalPos> potentialJobSite = v.getBrain().getMemory(MemoryModuleType.POTENTIAL_JOB_SITE);
             
             if (jobSite.isPresent() && jobSite.get().pos().equals(pos)) {
-                occupied = true;
+                occupiedBy = v.getId();
                 break;
             }
             if (potentialJobSite.isPresent() && potentialJobSite.get().pos().equals(pos)) {
-                occupied = true;
+                occupiedBy = v.getId();
                 break;
             }
         }
 
         OCCUPANCY_CACHE_TIME.put(pos, currentTime);
-        OCCUPANCY_CACHE_STATUS.put(pos, occupied);
-        return occupied;
+        OCCUPANCY_CACHE_OWNER.put(pos, occupiedBy);
+        
+        return occupiedBy != -1;
     }
 
     @Unique
@@ -67,12 +68,26 @@ public abstract class MixinVillagerAI {
             return;
         ServerLevel serverLevel = (ServerLevel) self.level();
 
+        if (com.fdimo.metrovillagers.Config.DATA.enableDebugBeams && self.tickCount % 5 == 0) {
+            org.joml.Vector3f yellow = new org.joml.Vector3f(1.0f, 1.0f, 0.0f);
+            self.getBrain().getMemory(MemoryModuleType.JOB_SITE).ifPresent(pos -> {
+                if (pos.dimension() == serverLevel.dimension()) {
+                    com.fdimo.metrovillagers.AsyncPathfinder.drawBeam(serverLevel, net.minecraft.world.phys.Vec3.atCenterOf(pos.pos()), self.getEyePosition(), yellow);
+                }
+            });
+            self.getBrain().getMemory(MemoryModuleType.POTENTIAL_JOB_SITE).ifPresent(pos -> {
+                if (pos.dimension() == serverLevel.dimension()) {
+                    com.fdimo.metrovillagers.AsyncPathfinder.drawBeam(serverLevel, net.minecraft.world.phys.Vec3.atCenterOf(pos.pos()), self.getEyePosition(), yellow);
+                }
+            });
+        }
+
         IVillagerKnowledge knowledge = (IVillagerKnowledge) self;
 
         com.fdimo.metrovillagers.AsyncPathfinder.printMetrics(serverLevel);
 
-        // Passive Observation: Run every ~10 seconds (200 ticks)
-        if (self.tickCount % 200 == 0) {
+        // Passive Observation: Run every ~40 seconds (800 ticks), staggered by entity ID to prevent lag spikes
+        if (self.tickCount % 800 == self.getId() % 800) {
             PoiManager poiManager = serverLevel.getPoiManager();
 
             // Validate memory (remove destroyed job sites)
