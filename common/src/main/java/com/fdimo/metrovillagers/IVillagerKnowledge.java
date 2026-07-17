@@ -9,4 +9,5 @@ public interface IVillagerKnowledge {
     void addKnownJobSite(GlobalPos pos, BlockPos currentVillagerPos);
     void addKnownJobSites(Set<GlobalPos> positions, BlockPos currentVillagerPos);
     void markUnreachable(GlobalPos pos, long currentTime);
+    boolean canMemorize(GlobalPos pos, long currentTime);
 }

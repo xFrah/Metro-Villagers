@@ -31,18 +31,29 @@ public class MixinVillagerKnowledge implements IVillagerKnowledge {
     }
 
     @Override
-    public void addKnownJobSite(GlobalPos pos, BlockPos currentVillagerPos) {
-        if (knownJobSites.contains(pos)) return;
-
-        Villager self = (Villager) (Object) this;
-        long currentTime = self.level().getGameTime();
+    public boolean canMemorize(GlobalPos pos, long currentTime) {
+        if (knownJobSites.contains(pos)) {
+            com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [DEBUG] Skipping " + pos.pos().toShortString() + " (Already memorized)");
+            return false;
+        }
         if (unreachableJobSites.containsKey(pos)) {
             if (currentTime - unreachableJobSites.get(pos) < 100) { // 5 seconds (20 ticks * 5)
-                return;
+                com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [DEBUG] Skipping " + pos.pos().toShortString() + " (Currently blacklisted)");
+                return false;
             } else {
+                com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [DEBUG] Blacklist expired for " + pos.pos().toShortString() + ", allowing retry!");
                 unreachableJobSites.remove(pos);
             }
         }
+        return true;
+    }
+
+    @Override
+    public void addKnownJobSite(GlobalPos pos, BlockPos currentVillagerPos) {
+        Villager self = (Villager) (Object) this;
+        long currentTime = self.level().getGameTime();
+        
+        if (!canMemorize(pos, currentTime)) return;
 
         String prof = self.getVillagerData().getProfession().name();
         String prefix = "[Metro Villagers] [" + prof + " at " + currentVillagerPos.toShortString() + "] ";
