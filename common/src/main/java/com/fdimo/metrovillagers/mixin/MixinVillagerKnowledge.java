@@ -33,15 +33,15 @@ public class MixinVillagerKnowledge implements IVillagerKnowledge {
     @Override
     public boolean canMemorize(GlobalPos pos, long currentTime) {
         if (knownJobSites.contains(pos)) {
-            com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [DEBUG] Skipping " + pos.pos().toShortString() + " (Already memorized)");
+            if (com.fdimo.metrovillagers.Config.DATA.enableDebugLogs) com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [DEBUG] Skipping " + pos.pos().toShortString() + " (Already memorized)");
             return false;
         }
         if (unreachableJobSites.containsKey(pos)) {
             if (currentTime - unreachableJobSites.get(pos) < 100) { // 5 seconds (20 ticks * 5)
-                com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [DEBUG] Skipping " + pos.pos().toShortString() + " (Currently blacklisted)");
+                if (com.fdimo.metrovillagers.Config.DATA.enableDebugLogs) com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [DEBUG] Skipping " + pos.pos().toShortString() + " (Currently blacklisted)");
                 return false;
             } else {
-                com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [DEBUG] Blacklist expired for " + pos.pos().toShortString() + ", allowing retry!");
+                if (com.fdimo.metrovillagers.Config.DATA.enableDebugLogs) com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [DEBUG] Blacklist expired for " + pos.pos().toShortString() + ", allowing retry!");
                 unreachableJobSites.remove(pos);
             }
         }

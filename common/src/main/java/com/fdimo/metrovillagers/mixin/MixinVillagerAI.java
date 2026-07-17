@@ -55,7 +55,7 @@ public abstract class MixinVillagerAI {
             poiManager.getInRange(
                 poiTypeHolder -> poiTypeHolder.is(net.minecraft.tags.PoiTypeTags.ACQUIRABLE_JOB_SITE),
                 self.blockPosition(),
-                48, // 48 block radius scan (Vanilla range)
+                com.fdimo.metrovillagers.Config.DATA.pathfindingRadius,
                 PoiManager.Occupancy.HAS_SPACE
             ).forEach(poiRecord -> {
                 GlobalPos pos = GlobalPos.of(serverLevel.dimension(), poiRecord.getPos());
@@ -106,8 +106,10 @@ public abstract class MixinVillagerAI {
                             foundGossip = true;
                             
                             // Draw blue beam between gossiping villagers
-                            org.joml.Vector3f blue = new org.joml.Vector3f(0.0f, 0.0f, 1.0f);
-                            com.fdimo.metrovillagers.AsyncPathfinder.drawBeam(serverLevel, self.getEyePosition(), nearby.getEyePosition(), blue);
+                            if (com.fdimo.metrovillagers.Config.DATA.enableDebugBeams) {
+                                org.joml.Vector3f blue = new org.joml.Vector3f(0.0f, 0.0f, 1.0f);
+                                com.fdimo.metrovillagers.AsyncPathfinder.drawBeam(serverLevel, self.getEyePosition(), nearby.getEyePosition(), blue);
+                            }
 
                             // Verify reachability before merging their knowledge into ours
                             com.fdimo.metrovillagers.AsyncPathfinder.checkReachableSites(self, serverLevel, validGossip, (reachableSites) -> {

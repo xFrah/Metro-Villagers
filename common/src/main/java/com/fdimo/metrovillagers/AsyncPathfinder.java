@@ -90,8 +90,9 @@ public class AsyncPathfinder {
         BlockPos villagerPos = villager.blockPosition();
         Set<GlobalPos> validSites = new java.util.HashSet<>();
         
+        int maxDistSqr = Config.DATA.pathfindingRadius * Config.DATA.pathfindingRadius;
         for (GlobalPos pos : sites) {
-            if (villager.level().dimension() == pos.dimension() && villagerPos.distSqr(pos.pos()) <= 64 * 64) {
+            if (villager.level().dimension() == pos.dimension() && villagerPos.distSqr(pos.pos()) <= maxDistSqr) {
                 validSites.add(pos);
             }
         }
@@ -101,7 +102,7 @@ public class AsyncPathfinder {
             return;
         }
 
-        int range = 64;
+        int range = Config.DATA.pathfindingRadius;
         PathNavigationRegion region = new PathNavigationRegion(serverLevel, villagerPos.offset(-range, -range, -range), villagerPos.offset(range, range, range));
 
         newPathfindings.addAndGet(validSites.size());
@@ -115,34 +116,36 @@ public class AsyncPathfinder {
                 WalkNodeEvaluator nodeEvaluator = new WalkNodeEvaluator();
                 nodeEvaluator.setCanPassDoors(true);
                 nodeEvaluator.setCanOpenDoors(true);
-                PathFinder pathFinder = new PathFinder(nodeEvaluator, 200);
+                PathFinder pathFinder = new PathFinder(nodeEvaluator, Config.DATA.maxPathfindingNodes);
 
                 Set<GlobalPos> reachableSites = new java.util.HashSet<>();
                 Set<GlobalPos> failedSites = new java.util.HashSet<>();
                 
                 for (GlobalPos pos : validSites) {
                     executedPathfindings.incrementAndGet();
-                    Path path = pathFinder.findPath(region, villager, Set.of(pos.pos()), 64.0F, 1, 1.0F);
+                    Path path = pathFinder.findPath(region, villager, Set.of(pos.pos()), (float)Config.DATA.pathfindingRadius, 1, 1.0F);
                     if (path != null && path.canReach()) {
                         reachableSites.add(pos);
-                        Constants.LOG.info("[Metro Villagers Async] [DEBUG] " + villagerPrefix + " Pathfinding SUCCESS for " + pos.pos().toShortString());
+                        if (Config.DATA.enableDebugLogs) Constants.LOG.info("[Metro Villagers Async] [DEBUG] " + villagerPrefix + " Pathfinding SUCCESS for " + pos.pos().toShortString());
                     } else {
                         failedSites.add(pos);
-                        Constants.LOG.info("[Metro Villagers Async] [DEBUG] " + villagerPrefix + " Pathfinding FAILED for " + pos.pos().toShortString());
+                        if (Config.DATA.enableDebugLogs) Constants.LOG.info("[Metro Villagers Async] [DEBUG] " + villagerPrefix + " Pathfinding FAILED for " + pos.pos().toShortString());
                     }
                 }
 
                 serverLevel.getServer().execute(() -> {
                     if (!villager.isRemoved()) {
                         // Draw beams
-                        org.joml.Vector3f green = new org.joml.Vector3f(0.0f, 1.0f, 0.0f);
-                        org.joml.Vector3f red = new org.joml.Vector3f(1.0f, 0.0f, 0.0f);
-                        
-                        for (GlobalPos pos : reachableSites) {
-                            drawBeam(serverLevel, villagerEyePos, net.minecraft.world.phys.Vec3.atCenterOf(pos.pos()), green);
-                        }
-                        for (GlobalPos pos : failedSites) {
-                            drawBeam(serverLevel, villagerEyePos, net.minecraft.world.phys.Vec3.atCenterOf(pos.pos()), red);
+                        if (Config.DATA.enableDebugBeams) {
+                            org.joml.Vector3f green = new org.joml.Vector3f(0.0f, 1.0f, 0.0f);
+                            org.joml.Vector3f red = new org.joml.Vector3f(1.0f, 0.0f, 0.0f);
+                            
+                            for (GlobalPos pos : reachableSites) {
+                                drawBeam(serverLevel, villagerEyePos, net.minecraft.world.phys.Vec3.atCenterOf(pos.pos()), green);
+                            }
+                            for (GlobalPos pos : failedSites) {
+                                drawBeam(serverLevel, villagerEyePos, net.minecraft.world.phys.Vec3.atCenterOf(pos.pos()), red);
+                            }
                         }
                         
                         callback.accept(reachableSites);
