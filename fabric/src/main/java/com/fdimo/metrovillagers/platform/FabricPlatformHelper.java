@@ -21,4 +21,9 @@ public class FabricPlatformHelper implements IPlatformHelper {
 
         return FabricLoader.getInstance().isDevelopmentEnvironment();
     }
+
+    @Override
+    public net.minecraft.core.particles.SimpleParticleType getChattingParticle() {
+        return com.fdimo.metrovillagers.MetroVillagersMod.CHATTING_PARTICLE;
+    }
 }

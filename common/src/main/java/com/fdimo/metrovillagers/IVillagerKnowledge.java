@@ -10,4 +10,6 @@ public interface IVillagerKnowledge {
     void addKnownJobSites(Set<GlobalPos> positions, BlockPos currentVillagerPos);
     void markUnreachable(GlobalPos pos, long currentTime);
     boolean canMemorize(GlobalPos pos, long currentTime);
+    long getLastGossipTime();
+    void setLastGossipTime(long time);
 }

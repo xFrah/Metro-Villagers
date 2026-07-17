@@ -25,6 +25,19 @@ public class MixinVillagerKnowledge implements IVillagerKnowledge {
     @Unique
     private static final int MAX_KNOWN_SITES = 50;
 
+    @Unique
+    private long lastGossipTime = 0;
+
+    @Override
+    public long getLastGossipTime() {
+        return this.lastGossipTime;
+    }
+
+    @Override
+    public void setLastGossipTime(long time) {
+        this.lastGossipTime = time;
+    }
+
     @Override
     public Set<GlobalPos> getKnownJobSites() {
         return this.knownJobSites;
@@ -33,12 +46,10 @@ public class MixinVillagerKnowledge implements IVillagerKnowledge {
     @Override
     public boolean canMemorize(GlobalPos pos, long currentTime) {
         if (knownJobSites.contains(pos)) {
-            if (com.fdimo.metrovillagers.Config.DATA.enableDebugLogs) com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [DEBUG] Skipping " + pos.pos().toShortString() + " (Already memorized)");
             return false;
         }
         if (unreachableJobSites.containsKey(pos)) {
             if (currentTime - unreachableJobSites.get(pos) < 100) { // 5 seconds (20 ticks * 5)
-                if (com.fdimo.metrovillagers.Config.DATA.enableDebugLogs) com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [DEBUG] Skipping " + pos.pos().toShortString() + " (Currently blacklisted)");
                 return false;
             } else {
                 if (com.fdimo.metrovillagers.Config.DATA.enableDebugLogs) com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [DEBUG] Blacklist expired for " + pos.pos().toShortString() + ", allowing retry!");

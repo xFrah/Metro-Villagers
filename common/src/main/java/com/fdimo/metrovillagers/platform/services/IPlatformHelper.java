@@ -24,6 +24,8 @@ public interface IPlatformHelper {
      */
     boolean isDevelopmentEnvironment();
 
+    net.minecraft.core.particles.SimpleParticleType getChattingParticle();
+
     /**
      * Gets the name of the environment type as a string.
      *

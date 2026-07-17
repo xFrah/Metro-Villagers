@@ -17,6 +17,9 @@
     "entrypoints": {
         "main": [
             "com.fdimo.metrovillagers.MetroVillagersMod"
+        ],
+        "client": [
+            "com.fdimo.metrovillagers.MetroVillagersClient"
         ]
     },
     "mixins": [

@@ -17,8 +17,10 @@ public class Config {
     public static class ConfigData {
         public int pathfindingRadius = 96;
         public int maxPathfindingNodes = 400;
+        public double gossipRadius = 5.0;
         public boolean enableDebugBeams = true;
         public boolean enableDebugLogs = true;
+        public int occupancyCacheDurationSeconds = 30; // Default: 30 seconds
     }
 
     public static void load() {

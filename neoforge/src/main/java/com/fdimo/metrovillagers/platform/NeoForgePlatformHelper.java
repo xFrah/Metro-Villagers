@@ -23,4 +23,9 @@ public class NeoForgePlatformHelper implements IPlatformHelper {
 
         return !FMLLoader.isProduction();
     }
+
+    @Override
+    public net.minecraft.core.particles.SimpleParticleType getChattingParticle() {
+        return com.fdimo.metrovillagers.MetroVillagersMod.CHATTING_PARTICLE.get();
+    }
 }
