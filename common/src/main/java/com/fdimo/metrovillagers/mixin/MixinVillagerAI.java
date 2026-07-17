@@ -40,7 +40,13 @@ public abstract class MixinVillagerAI {
         boolean occupied = false;
         for (Villager v : serverLevel.getEntitiesOfClass(Villager.class, box)) {
             java.util.Optional<GlobalPos> jobSite = v.getBrain().getMemory(MemoryModuleType.JOB_SITE);
+            java.util.Optional<GlobalPos> potentialJobSite = v.getBrain().getMemory(MemoryModuleType.POTENTIAL_JOB_SITE);
+            
             if (jobSite.isPresent() && jobSite.get().pos().equals(pos)) {
+                occupied = true;
+                break;
+            }
+            if (potentialJobSite.isPresent() && potentialJobSite.get().pos().equals(pos)) {
                 occupied = true;
                 break;
             }
@@ -54,7 +60,7 @@ public abstract class MixinVillagerAI {
     @Unique
     private GlobalPos lastAttemptedJobSite = null;
 
-    @Inject(method = "customServerAiStep", at = @At("HEAD"))
+    @Inject(method = "customServerAiStep", at = @At("TAIL"))
     private void onCustomServerAiStep(CallbackInfo ci) {
         Villager self = (Villager) (Object) this;
         if (!(self.level() instanceof ServerLevel))
@@ -113,9 +119,11 @@ public abstract class MixinVillagerAI {
         // Active Querying: If jobless and no potential job site, run every ~3 seconds
         // (60 ticks)
         if (self.tickCount % 60 == 0) {
-            if (self.getVillagerData().getProfession() == VillagerProfession.NONE) {
+            if (self.getVillagerData().getProfession() == VillagerProfession.NONE && !self.isBaby()) {
                 Brain<Villager> brain = self.getBrain();
-                if (brain.getMemory(MemoryModuleType.POTENTIAL_JOB_SITE).isEmpty()) {
+                
+                // Only actively search for jobs if the villager is in a normal state (not sleeping, panicking, etc)
+                if (brain.isActive(net.minecraft.world.entity.schedule.Activity.IDLE) && brain.getMemory(MemoryModuleType.POTENTIAL_JOB_SITE).isEmpty()) {
 
                     if (this.lastAttemptedJobSite != null) {
                         knowledge.markUnreachable(this.lastAttemptedJobSite, serverLevel.getGameTime());
