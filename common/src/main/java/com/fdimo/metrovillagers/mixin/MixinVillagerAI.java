@@ -148,6 +148,10 @@ public abstract class MixinVillagerAI {
                         knowledge.markUnreachable(target, serverLevel.getGameTime());
                         brain.eraseMemory(MemoryModuleType.POTENTIAL_JOB_SITE);
                         this.lastAttemptedJobSite = null;
+                        
+                        serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.ANGRY_VILLAGER,
+                                self.getX(), self.getY() + self.getEyeHeight() + 0.5, self.getZ(),
+                                5, 0.3, 0.3, 0.3, 0.0);
                     }
                 }
                 this.metro_lastPosCheck = self.position();
