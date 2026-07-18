@@ -93,12 +93,12 @@ public class MixinVillagerKnowledge implements IVillagerKnowledge {
                 }
 
                 // Otherwise, forget the farthest to make room
-                com.fdimo.metrovillagers.Constants.LOG.info(prefix + "Knowledge full! Forgetting farthest job site (" + farthestBlock + ") at " + farthest.pos().toShortString());
+                if (com.fdimo.metrovillagers.Config.DATA.enableDebugLogs) com.fdimo.metrovillagers.Constants.LOG.info(prefix + "Knowledge full! Forgetting farthest job site (" + farthestBlock + ") at " + farthest.pos().toShortString());
                 knownJobSites.remove(farthest);
             }
         }
 
-        com.fdimo.metrovillagers.Constants.LOG.info(prefix + "Added new job site (" + blockName + ") to knowledge at " + pos.pos().toShortString());
+        if (com.fdimo.metrovillagers.Config.DATA.enableDebugLogs) com.fdimo.metrovillagers.Constants.LOG.info(prefix + "Added new job site (" + blockName + ") to knowledge at " + pos.pos().toShortString());
         knownJobSites.add(pos);
     }
 
@@ -107,7 +107,7 @@ public class MixinVillagerKnowledge implements IVillagerKnowledge {
         if (positions != null && !positions.isEmpty()) {
             Villager self = (Villager) (Object) this;
             String prof = self.getVillagerData().getProfession().name();
-            com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [" + prof + " at " + currentVillagerPos.toShortString() + "] Merging " + positions.size() + " job sites into knowledge...");
+            if (com.fdimo.metrovillagers.Config.DATA.enableDebugLogs) com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [" + prof + " at " + currentVillagerPos.toShortString() + "] Merging " + positions.size() + " job sites into knowledge...");
             for (GlobalPos pos : positions) {
                 addKnownJobSite(pos, currentVillagerPos);
             }
@@ -129,12 +129,12 @@ public class MixinVillagerKnowledge implements IVillagerKnowledge {
             blockName = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
         }
 
-        com.fdimo.metrovillagers.Constants.LOG.info(prefix + "Pathfinder failed! Blacklisting (" + blockName + ") at " + pos.pos().toShortString() + " for 5 seconds.");
+        if (com.fdimo.metrovillagers.Config.DATA.enableDebugLogs) com.fdimo.metrovillagers.Constants.LOG.info(prefix + "Pathfinder failed! Blacklisting (" + blockName + ") at " + pos.pos().toShortString() + " for 5 seconds.");
     }
 
     @org.spongepowered.asm.mixin.injection.Inject(method = "mobInteract", at = @org.spongepowered.asm.mixin.injection.At("HEAD"))
     private void onMobInteract(net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand, org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<net.minecraft.world.InteractionResult> cir) {
-        if (!player.level().isClientSide() && hand == net.minecraft.world.InteractionHand.MAIN_HAND && com.fdimo.metrovillagers.Config.DATA.enableDebugLogs) {
+        if (!player.level().isClientSide() && hand == net.minecraft.world.InteractionHand.MAIN_HAND && com.fdimo.metrovillagers.Config.DATA.enableRightClickDebug) {
             Villager self = (Villager) (Object) this;
             String prof = self.getVillagerData().getProfession().name();
             player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§e--- Villager Knowledge: " + prof + " ---"));

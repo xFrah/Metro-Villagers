@@ -18,9 +18,15 @@ public class Config {
         public int pathfindingRadius = 96;
         public int maxPathfindingNodes = 5000;
         public double gossipRadius = 5.0;
-        public boolean enableDebugBeams = true;
-        public boolean enableDebugLogs = true;
-        public int occupancyCacheDurationSeconds = 30; // Default: 30 seconds
+        public boolean enableDebugBeams = false;
+        public boolean enableDebugLogs = false;
+        public boolean enableQueueDebug = false;
+        public boolean enableRightClickDebug = false;
+        public double pathfindingStuckDistance = 3.0;
+        public int pathfindingStuckTimeSeconds = 5;
+        public int occupancyCacheDurationSeconds = 30;
+        public int gossipCooldownSeconds = 10;
+        public int passiveLearningFrequencySeconds = 40;
     }
 
     public static void load() {

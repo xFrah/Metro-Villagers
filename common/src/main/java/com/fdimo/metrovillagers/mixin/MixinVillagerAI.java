@@ -60,6 +60,7 @@ public abstract class MixinVillagerAI {
 
     @Unique
     private GlobalPos lastAttemptedJobSite = null;
+    private net.minecraft.world.phys.Vec3 metro_lastPosCheck = null;
 
     @Inject(method = "customServerAiStep", at = @At("TAIL"))
     private void onCustomServerAiStep(CallbackInfo ci) {
@@ -86,8 +87,9 @@ public abstract class MixinVillagerAI {
 
         com.fdimo.metrovillagers.AsyncPathfinder.printMetrics(serverLevel);
 
-        // Passive Observation: Run every ~40 seconds (800 ticks), staggered by entity ID to prevent lag spikes
-        if (self.tickCount % 800 == self.getId() % 800) {
+        // Passive Observation: Run based on config frequency, staggered by entity ID to prevent lag spikes
+        int passiveTicks = com.fdimo.metrovillagers.Config.DATA.passiveLearningFrequencySeconds * 20;
+        if (passiveTicks > 0 && self.tickCount % passiveTicks == self.getId() % passiveTicks) {
             PoiManager poiManager = serverLevel.getPoiManager();
 
             // Validate memory (remove destroyed job sites)
@@ -131,6 +133,29 @@ public abstract class MixinVillagerAI {
             }
         }
 
+        // Stuck Detection: If they have a potential job site but haven't moved in X seconds
+        int stuckTicks = com.fdimo.metrovillagers.Config.DATA.pathfindingStuckTimeSeconds * 20;
+        if (stuckTicks > 0 && self.tickCount % stuckTicks == self.getId() % stuckTicks) {
+            Brain<Villager> brain = self.getBrain();
+            if (brain.getMemory(MemoryModuleType.POTENTIAL_JOB_SITE).isPresent()) {
+                double stuckDist = com.fdimo.metrovillagers.Config.DATA.pathfindingStuckDistance;
+                if (this.metro_lastPosCheck != null && this.metro_lastPosCheck.distanceToSqr(self.position()) < stuckDist * stuckDist) {
+                    GlobalPos target = brain.getMemory(MemoryModuleType.POTENTIAL_JOB_SITE).get();
+                    if (target.dimension() == serverLevel.dimension() && self.blockPosition().distManhattan(target.pos()) > 2) {
+                        if (com.fdimo.metrovillagers.Config.DATA.enableDebugLogs) {
+                            com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] Villager at " + self.blockPosition().toShortString() + " is physically stuck while pathfinding to " + target.pos().toShortString() + "! Blacklisting.");
+                        }
+                        knowledge.markUnreachable(target, serverLevel.getGameTime());
+                        brain.eraseMemory(MemoryModuleType.POTENTIAL_JOB_SITE);
+                        this.lastAttemptedJobSite = null;
+                    }
+                }
+                this.metro_lastPosCheck = self.position();
+            } else {
+                this.metro_lastPosCheck = null;
+            }
+        }
+
         // Active Querying: If jobless and no potential job site, run every ~3 seconds
         // (60 ticks)
         if (self.tickCount % 60 == 0) {
@@ -145,8 +170,9 @@ public abstract class MixinVillagerAI {
                         this.lastAttemptedJobSite = null;
                     }
 
-                    // 10 second gossip cooldown
-                    if (serverLevel.getGameTime() - knowledge.getLastGossipTime() < 200) {
+                    // Gossip cooldown
+                    long gossipCooldownTicks = com.fdimo.metrovillagers.Config.DATA.gossipCooldownSeconds * 20L;
+                    if (serverLevel.getGameTime() - knowledge.getLastGossipTime() < gossipCooldownTicks) {
                         return;
                     }
 
@@ -209,7 +235,7 @@ public abstract class MixinVillagerAI {
                                                     0.0);
 
                                             String prof = self.getVillagerData().getProfession().name();
-                                            com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [" + prof
+                                            if (com.fdimo.metrovillagers.Config.DATA.enableDebugLogs) com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [" + prof
                                                     + " at " + self.blockPosition().toShortString()
                                                     + "] Jobless Villager queried nearby villager and verified "
                                                     + reachableSites.size() + " known sites!");
@@ -238,7 +264,7 @@ public abstract class MixinVillagerAI {
                                     blockName = net.minecraft.core.registries.BuiltInRegistries.BLOCK
                                             .getKey(serverLevel.getBlockState(closestSite.pos()).getBlock()).toString();
                                 }
-                                com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [" + prof + " at "
+                                if (com.fdimo.metrovillagers.Config.DATA.enableDebugLogs) com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [" + prof + " at "
                                         + self.blockPosition().toShortString()
                                         + "] Jobless Villager selected closest gossiped job site (" + blockName
                                         + ") at " + closestSite.pos().toShortString() + " as their new target!");
