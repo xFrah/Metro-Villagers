@@ -131,4 +131,25 @@ public class MixinVillagerKnowledge implements IVillagerKnowledge {
 
         com.fdimo.metrovillagers.Constants.LOG.info(prefix + "Pathfinder failed! Blacklisting (" + blockName + ") at " + pos.pos().toShortString() + " for 5 seconds.");
     }
+
+    @org.spongepowered.asm.mixin.injection.Inject(method = "mobInteract", at = @org.spongepowered.asm.mixin.injection.At("HEAD"))
+    private void onMobInteract(net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand, org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<net.minecraft.world.InteractionResult> cir) {
+        if (!player.level().isClientSide() && hand == net.minecraft.world.InteractionHand.MAIN_HAND && com.fdimo.metrovillagers.Config.DATA.enableDebugLogs) {
+            Villager self = (Villager) (Object) this;
+            String prof = self.getVillagerData().getProfession().name();
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§e--- Villager Knowledge: " + prof + " ---"));
+            if (knownJobSites.isEmpty()) {
+                player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§7  • No known job sites."));
+            } else {
+                for (GlobalPos pos : knownJobSites) {
+                    String blockName = "unknown";
+                    if (self.level().dimension() == pos.dimension()) {
+                        net.minecraft.world.level.block.state.BlockState state = self.level().getBlockState(pos.pos());
+                        blockName = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();
+                    }
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§a  • " + blockName + " at " + pos.pos().toShortString()));
+                }
+            }
+        }
+    }
 }

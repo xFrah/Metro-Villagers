@@ -102,7 +102,7 @@ public class AsyncPathfinder {
             return;
         }
 
-        int range = Config.DATA.pathfindingRadius;
+        int range = (int)(Config.DATA.pathfindingRadius * 2.0); // 2x buffer for indirect paths
         PathNavigationRegion region = new PathNavigationRegion(serverLevel, villagerPos.offset(-range, -range, -range), villagerPos.offset(range, range, range));
 
         newPathfindings.addAndGet(validSites.size());
@@ -121,9 +121,11 @@ public class AsyncPathfinder {
                 Set<GlobalPos> reachableSites = new java.util.HashSet<>();
                 Set<GlobalPos> failedSites = new java.util.HashSet<>();
                 
+                float maxPathDistance = (float)Config.DATA.pathfindingRadius * 2.0F;
+
                 for (GlobalPos pos : validSites) {
                     executedPathfindings.incrementAndGet();
-                    Path path = pathFinder.findPath(region, villager, Set.of(pos.pos()), (float)Config.DATA.pathfindingRadius, 1, 1.0F);
+                    Path path = pathFinder.findPath(region, villager, Set.of(pos.pos()), maxPathDistance, 1, 1.0F);
                     if (path != null && path.canReach()) {
                         reachableSites.add(pos);
                         if (Config.DATA.enableDebugLogs) Constants.LOG.info("[Metro Villagers Async] [DEBUG] " + villagerPrefix + " Pathfinding SUCCESS for " + pos.pos().toShortString());

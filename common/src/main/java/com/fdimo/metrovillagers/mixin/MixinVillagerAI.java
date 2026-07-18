@@ -36,7 +36,7 @@ public abstract class MixinVillagerAI {
             return OCCUPANCY_CACHE_OWNER.getOrDefault(pos, -1) != -1;
         }
 
-        net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(pos).inflate(64.0D);
+        net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(pos).inflate(com.fdimo.metrovillagers.Config.DATA.pathfindingRadius + 16.0D);
         int occupiedBy = -1;
         for (Villager v : serverLevel.getEntitiesOfClass(Villager.class, box)) {
             java.util.Optional<GlobalPos> jobSite = v.getBrain().getMemory(MemoryModuleType.JOB_SITE);
@@ -226,6 +226,7 @@ public abstract class MixinVillagerAI {
                     Set<GlobalPos> mySites = knowledge.getKnownJobSites();
                     if (!mySites.isEmpty()) {
                         GlobalPos closestSite = mySites.stream()
+                                .filter(p -> !metro_isOccupied(serverLevel, p.pos()))
                                 .min(Comparator.comparingDouble(p -> p.pos().distSqr(self.blockPosition())))
                                 .orElse(null);
 
@@ -249,6 +250,10 @@ public abstract class MixinVillagerAI {
                             }
                             brain.setMemory(MemoryModuleType.POTENTIAL_JOB_SITE, closestSite);
                             this.lastAttemptedJobSite = closestSite;
+                            
+                            // Immediately update the cache so the next villager knows it's taken!
+                            OCCUPANCY_CACHE_OWNER.put(closestSite.pos(), self.getId());
+                            OCCUPANCY_CACHE_TIME.put(closestSite.pos(), serverLevel.getGameTime());
                         }
                     }
                 }
