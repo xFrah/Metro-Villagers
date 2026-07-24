@@ -3,13 +3,14 @@ plugins {
 }
 
 publishMods {
+    file = tasks.named("jar").flatMap { it.archiveFile }
     def changelogFile = rootProject.file("CHANGELOG.md")
     def changelogText = changelogFile.exists() ? changelogFile.text : "See GitHub releases for changelog."
 
     changelog = changelogText
     type = STABLE
     version = project.version
-    displayName = "${project.mod_id}-${project.version}-${project.minecraft_version}-${project.name}"
+    displayName = "${project.mod_id}-${project.version}-26.x-${project.name}"
 
     // We use the project name (e.g. 'fabric', 'neoforge', 'forge') as the loader
     modLoaders.add(project.name)

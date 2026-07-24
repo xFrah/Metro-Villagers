@@ -3,7 +3,7 @@ package com.fdimo.metrovillagers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.level.PathNavigationRegion;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.level.pathfinder.PathFinder;
@@ -36,7 +36,7 @@ public class AsyncPathfinder {
                 String msg = String.format("[Metro Villagers Async] Queue: %d | New/sec: %.1f | Executed/sec: %.1f", pending, newlyAddedPerSec, executedPerSec);
                 net.minecraft.network.chat.Component comp = net.minecraft.network.chat.Component.literal("§e" + msg);
                 for (net.minecraft.server.level.ServerPlayer player : serverLevel.getServer().getPlayerList().getPlayers()) {
-                    player.displayClientMessage(comp, true);
+                    player.sendSystemMessage(comp);
                 }
             }
         }
@@ -109,8 +109,7 @@ public class AsyncPathfinder {
         PathNavigationRegion region = new PathNavigationRegion(serverLevel, villagerPos.offset(-range, -range, -range), villagerPos.offset(range, range, range));
 
         newPathfindings.addAndGet(validSites.size());
-
-        String prof = villager.getVillagerData().getProfession().name();
+        String prof = villager.getVillagerData().profession().unwrapKey().map(k -> k.identifier().getPath()).orElse("none");
         String villagerPrefix = "[" + prof + " at " + villagerPos.toShortString() + "]";
         net.minecraft.world.phys.Vec3 villagerEyePos = villager.getEyePosition();
 
@@ -123,11 +122,11 @@ public class AsyncPathfinder {
 
                 Set<GlobalPos> reachableSites = new java.util.HashSet<>();
                 Set<GlobalPos> failedSites = new java.util.HashSet<>();
-                
                 float maxPathDistance = (float)Config.DATA.pathfindingRadius * 2.0F;
 
                 for (GlobalPos pos : validSites) {
                     executedPathfindings.incrementAndGet();
+
                     Path path = pathFinder.findPath(region, villager, Set.of(pos.pos()), maxPathDistance, 1, 1.0F);
                     if (path != null && path.canReach()) {
                         reachableSites.add(pos);
@@ -140,11 +139,9 @@ public class AsyncPathfinder {
 
                 serverLevel.getServer().execute(() -> {
                     if (!villager.isRemoved()) {
-                        // Draw beams
                         if (Config.DATA.enableDebugBeams) {
                             org.joml.Vector3f green = new org.joml.Vector3f(0.0f, 1.0f, 0.0f);
                             org.joml.Vector3f red = new org.joml.Vector3f(1.0f, 0.0f, 0.0f);
-                            
                             for (GlobalPos pos : reachableSites) {
                                 drawBeam(serverLevel, villagerEyePos, net.minecraft.world.phys.Vec3.atCenterOf(pos.pos()), green);
                             }
@@ -164,7 +161,8 @@ public class AsyncPathfinder {
     }
 
     public static void drawBeam(ServerLevel level, net.minecraft.world.phys.Vec3 start, net.minecraft.world.phys.Vec3 end, org.joml.Vector3f color) {
-        net.minecraft.core.particles.DustParticleOptions particle = new net.minecraft.core.particles.DustParticleOptions(color, 1.0f);
+        int argb = net.minecraft.util.ARGB.colorFromFloat(1.0f, color.x(), color.y(), color.z());
+        net.minecraft.core.particles.DustParticleOptions particle = new net.minecraft.core.particles.DustParticleOptions(argb, 1.0f);
         double dist = start.distanceTo(end);
         int count = (int) (dist * 4); // 4 particles per block
         for (int i = 0; i <= count; i++) {

@@ -4,7 +4,7 @@ import net.fabricmc.api.ModInitializer;
 
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.fabricmc.fabric.api.particle.v1.FabricParticleTypes;
 
@@ -13,7 +13,7 @@ public class MetroVillagersMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        Registry.register(BuiltInRegistries.PARTICLE_TYPE, ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "chatting"), CHATTING_PARTICLE);
+        Registry.register(BuiltInRegistries.PARTICLE_TYPE, Identifier.fromNamespaceAndPath(Constants.MOD_ID, "chatting"), CHATTING_PARTICLE);
         Constants.LOG.info("Hello Fabric world!");
         CommonClass.init();
     }

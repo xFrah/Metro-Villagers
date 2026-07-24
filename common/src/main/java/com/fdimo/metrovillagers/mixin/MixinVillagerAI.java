@@ -6,8 +6,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
-import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -163,7 +163,7 @@ public abstract class MixinVillagerAI {
         // Active Querying: If jobless and no potential job site, run every ~3 seconds
         // (60 ticks)
         if (self.tickCount % 60 == 0) {
-            if (self.getVillagerData().getProfession() == VillagerProfession.NONE && !self.isBaby()) {
+            if (self.getVillagerData().profession().is(VillagerProfession.NONE) && !self.isBaby()) {
                 Brain<Villager> brain = self.getBrain();
                 
                 // Only actively search for jobs if the villager is in a normal state (not sleeping, panicking, etc)
@@ -238,7 +238,7 @@ public abstract class MixinVillagerAI {
                                                     nearbyEyePos.x, nearbyEyePos.y, nearbyEyePos.z, 5, 0.5, 0.5, 0.5,
                                                     0.0);
 
-                                            String prof = self.getVillagerData().getProfession().name();
+                                            String prof = self.getVillagerData().profession().unwrapKey().map(k -> k.identifier().getPath()).orElse("none");
                                             if (com.fdimo.metrovillagers.Config.DATA.enableDebugLogs) com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [" + prof
                                                     + " at " + self.blockPosition().toShortString()
                                                     + "] Jobless Villager queried nearby villager and verified "
@@ -262,7 +262,7 @@ public abstract class MixinVillagerAI {
 
                         if (closestSite != null) {
                             if (foundGossip) {
-                                String prof = self.getVillagerData().getProfession().name();
+                                String prof = self.getVillagerData().profession().unwrapKey().map(k -> k.identifier().getPath()).orElse("none");
                                 String blockName = "unknown";
                                 if (self.level().dimension() == closestSite.dimension()) {
                                     blockName = net.minecraft.core.registries.BuiltInRegistries.BLOCK

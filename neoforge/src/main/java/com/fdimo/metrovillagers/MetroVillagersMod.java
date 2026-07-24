@@ -7,8 +7,6 @@ import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.neoforged.neoforge.registries.DeferredRegister;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.bus.api.IEventBus;
 
 @Mod(Constants.MOD_ID)
 public class MetroVillagersMod {

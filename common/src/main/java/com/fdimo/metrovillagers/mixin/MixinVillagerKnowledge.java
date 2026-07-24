@@ -3,7 +3,7 @@ package com.fdimo.metrovillagers.mixin;
 import com.fdimo.metrovillagers.IVillagerKnowledge;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
-import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.villager.Villager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
@@ -66,7 +66,7 @@ public class MixinVillagerKnowledge implements IVillagerKnowledge {
         
         if (!canMemorize(pos, currentTime)) return;
 
-        String prof = self.getVillagerData().getProfession().name();
+        String prof = self.getVillagerData().profession().unwrapKey().map(k -> k.identifier().getPath()).orElse("none");
         String prefix = "[Metro Villagers] [" + prof + " at " + currentVillagerPos.toShortString() + "] ";
 
         String blockName = "unknown";
@@ -106,7 +106,7 @@ public class MixinVillagerKnowledge implements IVillagerKnowledge {
     public void addKnownJobSites(Set<GlobalPos> positions, BlockPos currentVillagerPos) {
         if (positions != null && !positions.isEmpty()) {
             Villager self = (Villager) (Object) this;
-            String prof = self.getVillagerData().getProfession().name();
+            String prof = self.getVillagerData().profession().unwrapKey().map(k -> k.identifier().getPath()).orElse("none");
             if (com.fdimo.metrovillagers.Config.DATA.enableDebugLogs) com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [" + prof + " at " + currentVillagerPos.toShortString() + "] Merging " + positions.size() + " job sites into knowledge...");
             for (GlobalPos pos : positions) {
                 addKnownJobSite(pos, currentVillagerPos);
@@ -120,7 +120,7 @@ public class MixinVillagerKnowledge implements IVillagerKnowledge {
         knownJobSites.remove(pos);
 
         Villager self = (Villager) (Object) this;
-        String prof = self.getVillagerData().getProfession().name();
+        String prof = self.getVillagerData().profession().unwrapKey().map(k -> k.identifier().getPath()).orElse("none");
         String prefix = "[Metro Villagers] [" + prof + " at " + self.blockPosition().toShortString() + "] ";
 
         String blockName = "unknown";
@@ -136,7 +136,7 @@ public class MixinVillagerKnowledge implements IVillagerKnowledge {
     private void onMobInteract(net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand, org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable<net.minecraft.world.InteractionResult> cir) {
         if (!player.level().isClientSide() && hand == net.minecraft.world.InteractionHand.MAIN_HAND && com.fdimo.metrovillagers.Config.DATA.enableRightClickDebug) {
             Villager self = (Villager) (Object) this;
-            String prof = self.getVillagerData().getProfession().name();
+            String prof = self.getVillagerData().profession().unwrapKey().map(k -> k.identifier().getPath()).orElse("none");
             player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§e--- Villager Knowledge: " + prof + " ---"));
             if (knownJobSites.isEmpty()) {
                 player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§7  • No known job sites."));
