@@ -27,6 +27,7 @@ public class Config {
         public int occupancyCacheDurationSeconds = 30;
         public int gossipCooldownSeconds = 10;
         public int passiveLearningFrequencySeconds = 40;
+        public int blacklistDurationSeconds = 20;
     }
 
     public static void load() {

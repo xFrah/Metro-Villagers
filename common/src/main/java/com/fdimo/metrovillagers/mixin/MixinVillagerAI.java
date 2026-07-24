@@ -59,6 +59,12 @@ public abstract class MixinVillagerAI {
     }
 
     @Unique
+    private static void metro_invalidateOccupancy(net.minecraft.core.BlockPos pos) {
+        OCCUPANCY_CACHE_OWNER.put(pos, -1);
+        OCCUPANCY_CACHE_TIME.remove(pos);
+    }
+
+    @Unique
     private GlobalPos lastAttemptedJobSite = null;
     private net.minecraft.world.phys.Vec3 metro_lastPosCheck = null;
 
@@ -147,6 +153,9 @@ public abstract class MixinVillagerAI {
                         }
                         knowledge.markUnreachable(target, serverLevel.getGameTime());
                         brain.eraseMemory(MemoryModuleType.POTENTIAL_JOB_SITE);
+                        brain.eraseMemory(MemoryModuleType.JOB_SITE);
+                        serverLevel.getPoiManager().release(target.pos());
+                        metro_invalidateOccupancy(target.pos());
                         this.lastAttemptedJobSite = null;
                         
                         serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.ANGRY_VILLAGER,
@@ -171,6 +180,8 @@ public abstract class MixinVillagerAI {
 
                     if (this.lastAttemptedJobSite != null) {
                         knowledge.markUnreachable(this.lastAttemptedJobSite, serverLevel.getGameTime());
+                        serverLevel.getPoiManager().release(this.lastAttemptedJobSite.pos());
+                        metro_invalidateOccupancy(this.lastAttemptedJobSite.pos());
                         this.lastAttemptedJobSite = null;
                     }
 
