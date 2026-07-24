@@ -22,6 +22,7 @@ public class Config {
         public boolean enableDebugLogs = false;
         public boolean enableQueueDebug = false;
         public boolean enableRightClickDebug = false;
+        public boolean enableStuckParticles = false;
         public double pathfindingStuckDistance = 3.0;
         public int pathfindingStuckTimeSeconds = 5;
         public int occupancyCacheDurationSeconds = 30;

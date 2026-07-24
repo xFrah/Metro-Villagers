@@ -158,9 +158,11 @@ public abstract class MixinVillagerAI {
                         metro_invalidateOccupancy(target.pos());
                         this.lastAttemptedJobSite = null;
                         
-                        serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.ANGRY_VILLAGER,
-                                self.getX(), self.getY() + self.getEyeHeight() + 0.5, self.getZ(),
-                                5, 0.3, 0.3, 0.3, 0.0);
+                        if (com.fdimo.metrovillagers.Config.DATA.enableStuckParticles) {
+                            serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.ANGRY_VILLAGER,
+                                    self.getX(), self.getY() + self.getEyeHeight() + 0.5, self.getZ(),
+                                    5, 0.3, 0.3, 0.3, 0.0);
+                        }
                     }
                 }
                 this.metro_lastPosCheck = self.position();
