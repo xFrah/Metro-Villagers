@@ -49,7 +49,8 @@ public class MixinVillagerKnowledge implements IVillagerKnowledge {
             return false;
         }
         if (unreachableJobSites.containsKey(pos)) {
-            if (currentTime - unreachableJobSites.get(pos) < 100) { // 5 seconds (20 ticks * 5)
+            long blacklistTicks = com.fdimo.metrovillagers.Config.DATA.blacklistDurationSeconds * 20L; // Configured in seconds, converted to game ticks
+            if (currentTime - unreachableJobSites.get(pos) < blacklistTicks) {
                 return false;
             } else {
                 if (com.fdimo.metrovillagers.Config.DATA.enableDebugLogs) com.fdimo.metrovillagers.Constants.LOG.info("[Metro Villagers] [DEBUG] Blacklist expired for " + pos.pos().toShortString() + ", allowing retry!");
